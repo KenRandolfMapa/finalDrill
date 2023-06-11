@@ -19,6 +19,17 @@ app.config["MYSQL_CURSORCLASS"] = "DictCursor"
 
 mysql = MySQL(app)
 
+@app.route("/")
+def hello_world():
+	return "<p>Hello, World!</p>"
+
+def data_fetch(query):
+	cur = mysql.connection.cursor()
+	cur.execute(query)
+	data = cur.fetchall()
+	cur.close()
+	return data
+
 
 
 @app.route("/customer", methods=["GET"])
@@ -44,10 +55,63 @@ def get_customer_by_number(customerNumber):
 
 @app.route("/employees", methods=["POST"])
 def add_employees():
-	cur = mysql.connection.cursor()
-	info = request.get_json()
-	firstName = info["firstName"]
-	lastName = info["lastName"]
+    cur = mysql.connection.cursor()
+    info = request.get_json()
+    firstName = info["firstName"]
+    lastName = info["lastName"]
+    cur.execute(
+        """INSERT INTO employees (firstName, lastName) VALUES (%s, %s)""",
+        (firstName, lastName),
+    )
+    mysql.connection.commit()
+    print("row(s) affected: {}".format(cur.rowcount))
+    rows_affected = cur.rowcount
+    cur.close()
+    return make_response(
+        jsonify(
+            {"message": "employees added successfully", "rows_affected": rows_affected}
+        ),
+        201,
+    )
+@app.route("employees/<int:employeeNumber>", methods=["PUT"])
+def update_employees(employeeNumber):
+    cur = mysql.connection.cursor()
+    info = request.get_json()
+    firstName = info["firstName"]
+    lastName = info["lastName"]
+    cur.execute(
+        """ UPDATE employees SET firstName = %s, lastNameame = %s WHERE employeeNumber = %s """,
+        (firstName, lastName, employeeNumber),
+    )
+    mysql.connection.commit()
+    rows_affected = cur.rowcount
+    cur.close()
+    return make_response(
+        jsonify(
+            {"message": "actor updated successfully", "rows_affected": rows_affected}
+        ),
+        200,
+    )
+
+@app.route("/employees/<int:employeeNumber>", methods=["DELETE"])
+def delete_employees(employeeNumber):
+    cur = mysql.connection.cursor()
+    cur.execute(""" DELETE FROM employees where employeeNumber = %s """, (employeeNumber,))
+    mysql.connection.commit()
+    rows_affected = cur.rowcount
+    cur.close()
+    return make_response(
+        jsonify(
+            {"message": "actor deleted successfully", "rows_affected": rows_affected}
+        ),
+        200,
+    )
+
+@app.route("/employees/format", methods=["GET"])
+def get_params():
+    fmt = request.args.get('employeeNumber')
+    foo = request.args.get('aaaa')
+    return make_response(jsonify({"format":fmt, "foo":foo}),200)
 	
 if __name__ == "__main__":
 	app.run(debug=True)
