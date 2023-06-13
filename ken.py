@@ -34,7 +34,7 @@ def get_customer():
 @app.route("/customers/<int:customerNumber>", methods=["GET"])
 def get_customer_by_number(customerNumber):
     cur = mysql.connection.cursor()
-    query = "SELECT * FROM customers WHERE customerNumber = %s"
+    query = "SELECT * FROM customers WHERE customerNumber = {}"
     cur.execute(query, (customerNumber,))
     data = cur.fetchone()
     cur.close()
